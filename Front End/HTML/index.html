@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Akuntansi Utang dan Pembayaran</title>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="../CSS/style.css">
+    <!-- Supabase JS Client dari CDN (versi 2) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar no-print">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">Rp</div>
+                <div class="brand-text">
+                    <h1>Sistem Akuntansi Utang & Pembayaran</h1>
+                    <p>Pencatatan Penjualan Kredit, Piutang Usaha & Pembayaran Pelanggan</p>
+                </div>
+            </div>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span>Terhubung ke Supabase Cloud (PostgreSQL)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="nav-tabs-wrapper no-print">
+        <div class="nav-tabs">
+            <button class="tab-btn active" data-tab="dashboard">
+                <span>📊 Dashboard</span>
+            </button>
+            <button class="tab-btn" data-tab="utang">
+                <span>📖 Buku Piutang & Utang</span>
+            </button>
+            <button class="tab-btn" data-tab="penjualan">
+                <span>➕ Penjualan Kredit Baru</span>
+            </button>
+            <button class="tab-btn" data-tab="bayar">
+                <span>💳 Pembayaran Utang</span>
+            </button>
+            <button class="tab-btn" data-tab="pelanggan">
+                <span>👥 Data Pelanggan</span>
+            </button>
+            <button class="tab-btn" data-tab="produk">
+                <span>📦 Data Produk</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-container">
+
+        <!-- ================================================================
+             TAB 1: DASHBOARD
+             ================================================================ -->
+        <section id="tab-dashboard" class="tab-content active">
+            <!-- Financial Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card card-blue">
+                    <div class="metric-header">
+                        <span class="metric-title">Total Penjualan Kredit</span>
+                        <div class="metric-icon">📑</div>
+                    </div>
+                    <div class="metric-value" id="metric-total-piutang">Rp 0</div>
+                    <div class="metric-desc">Nilai kotor seluruh faktur penjualan</div>
+                </div>
+
+                <div class="metric-card card-green">
+                    <div class="metric-header">
+                        <span class="metric-title">Total Kas Diterima</span>
+                        <div class="metric-icon">💰</div>
+                    </div>
+                    <div class="metric-value" id="metric-total-kas" style="color: #059669;">Rp 0</div>
+                    <div class="metric-desc">Penerimaan dari DP & Angsuran bayar</div>
+                </div>
+
+                <div class="metric-card card-red">
+                    <div class="metric-header">
+                        <span class="metric-title">Sisa Piutang Berjalan</span>
+                        <div class="metric-icon">⏳</div>
+                    </div>
+                    <div class="metric-value" id="metric-sisa-utang" style="color: #dc2626;">Rp 0</div>
+                    <div class="metric-desc">Total utang pelanggan belum lunas</div>
+                </div>
+
+                <div class="metric-card card-amber">
+                    <div class="metric-header">
+                        <span class="metric-title">Total Transaksi</span>
+                        <div class="metric-icon">🏷️</div>
+                    </div>
+                    <div class="metric-value" id="metric-count-transaksi">0 Nota</div>
+                    <div class="metric-desc">Jumlah nota penjualan tercatat</div>
+                </div>
+            </div>
+
+            <!-- Status Distribution -->
+            <div class="status-stats-grid">
+                <div class="status-stat-item">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #64748b;">Status Lunas</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #059669;" id="stat-count-lunas">0</div>
+                    </div>
+                    <span class="badge badge-lunas">✓ Selesai</span>
+                </div>
+                <div class="status-stat-item">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #64748b;">Status Sebagian</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #d97706;" id="stat-count-sebagian">0</div>
+                    </div>
+                    <span class="badge badge-sebagian">⏳ Dicicil</span>
+                </div>
+                <div class="status-stat-item">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #64748b;">Status Belum Lunas</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #dc2626;" id="stat-count-belum">0</div>
+                    </div>
+                    <span class="badge badge-belum">⚠ Tertunda</span>
+                </div>
+            </div>
+
+            <!-- Recent Sales Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📑 Transaksi Penjualan Kredit Terbaru</span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="switchTab('utang')">Lihat Semua di Buku Utang →</button>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nomor Nota</th>
+                                    <th>Tanggal</th>
+                                    <th>Pelanggan</th>
+                                    <th class="text-right">Total Nota</th>
+                                    <th class="text-right">Sisa Utang</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-sales-tbody">
+                                <!-- Diisi secara dinamis oleh JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 2: BUKU PEMBANTU PIUTANG & UTANG (v_utang)
+             ================================================================ -->
+        <section id="tab-utang" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📖 Buku Pembantu Piutang & Status Utang Pelanggan</span>
+                    </div>
+                    <div class="filter-bar">
+                        <div class="search-input">
+                            <input type="text" id="search-utang" class="form-control" placeholder="Cari nota atau nama pelanggan...">
+                        </div>
+                        <button class="btn btn-primary btn-sm filter-status-btn" data-filter="all">Semua</button>
+                        <button class="btn btn-secondary btn-sm filter-status-btn" data-filter="belum_lunas">Belum Lunas</button>
+                        <button class="btn btn-secondary btn-sm filter-status-btn" data-filter="sebagian">Sebagian</button>
+                        <button class="btn btn-secondary btn-sm filter-status-btn" data-filter="lunas">Lunas</button>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nomor Nota</th>
+                                    <th>Tanggal</th>
+                                    <th>Pelanggan</th>
+                                    <th class="text-right">Total Penjualan</th>
+                                    <th class="text-right">Uang Muka (DP)</th>
+                                    <th class="text-right">Total Bayar</th>
+                                    <th class="text-right">Sisa Utang</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="utang-table-tbody">
+                                <!-- Diisi secara dinamis oleh JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 3: PENJUALAN KREDIT BARU (TIMBUL UTANG)
+             ================================================================ -->
+        <section id="tab-penjualan" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>➕ Form Pembuatan Faktur Penjualan Kredit</span>
+                    </div>
+                    <span style="font-size: 0.85rem; color: #64748b;">Entitas: penjualan & detail_penjualan</span>
+                </div>
+                <div class="card-body">
+                    <form id="form-penjualan">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="penjualan-nota">Nomor Nota / Faktur</label>
+                                <input type="text" id="penjualan-nota" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="penjualan-tanggal">Tanggal Transaksi</label>
+                                <input type="date" id="penjualan-tanggal" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="penjualan-pelanggan">Pilih Pelanggan (Debitur)</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <select id="penjualan-pelanggan" class="form-control" required>
+                                        <option value="">-- Pilih Pelanggan --</option>
+                                    </select>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-tambah-pelanggan')">+ Baru</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ITEMS BUILDER -->
+                        <div class="items-builder">
+                            <div class="items-builder-header">
+                                <strong style="font-size: 0.95rem;">Rincian Barang yang Dijual (detail_penjualan):</strong>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow()">+ Tambah Barang</button>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 3fr 1fr 2fr 2fr 40px; gap: 0.75rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 600; color: #64748b;">
+                                <div>PILIH PRODUK</div>
+                                <div class="text-center">QTY</div>
+                                <div class="text-right">HARGA SATUAN (RP)</div>
+                                <div class="text-right">SUBTOTAL (RP)</div>
+                                <div></div>
+                            </div>
+
+                            <div id="items-container">
+                                <!-- Dynamic Item Rows -->
+                            </div>
+                        </div>
+
+                        <!-- SUMMARY & DP -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; align-items: start;">
+                            <div class="form-group">
+                                <label for="penjualan-dp">Uang Muka / Down Payment (DP)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" id="penjualan-dp" class="form-control" value="0" min="0" onchange="calculateInvoiceSummary()" onkeyup="calculateInvoiceSummary()">
+                                </div>
+                                <small style="color: #64748b;">Dibayarkan di awal saat transaksi dibuat. Mengurangi saldo piutang awal.</small>
+                            </div>
+
+                            <div class="invoice-summary-box">
+                                <div class="summary-row">
+                                    <span>Subtotal Belanja:</span>
+                                    <span id="summary-subtotal" class="font-bold">Rp 0</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Uang Muka (DP):</span>
+                                    <span id="summary-dp" style="color: #059669; font-weight: 600;">- Rp 0</span>
+                                </div>
+                                <div class="summary-row total-row debt-row">
+                                    <span>Sisa Piutang Awal:</span>
+                                    <span id="summary-sisa-utang">Rp 0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                            <button type="reset" class="btn btn-secondary">Reset Form</button>
+                            <button type="submit" id="btn-simpan-penjualan" class="btn btn-primary">💾 Simpan Transaksi Penjualan Kredit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 4: PEMBAYARAN UTANG
+             ================================================================ -->
+        <section id="tab-bayar" class="tab-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+                <!-- Form Input Pembayaran -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>💳 Input Pembayaran Angsuran / Pelunasan</span>
+                        </div>
+                        <span style="font-size: 0.85rem; color: #64748b;">Entitas: pembayaran</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="form-pembayaran">
+                            <div class="form-group">
+                                <label for="bayar-nota-select">Pilih Faktur / Nota Penjualan</label>
+                                <select id="bayar-nota-select" class="form-control" required onchange="onNotaBayarChange(this)">
+                                    <option value="">-- Pilih Nota Penjualan --</option>
+                                </select>
+                            </div>
+
+                            <!-- Nota Information Preview -->
+                            <div id="bayar-info-box" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                                <div style="font-size: 0.8rem; font-weight: 600; color: #64748b;">RINCIAN PIUTANG:</div>
+                                <div class="summary-row" style="margin-top: 0.25rem;"><span>Pelanggan:</span><strong id="info-bayar-pelanggan">-</strong></div>
+                                <div class="summary-row"><span>Total Nota:</span><span id="info-bayar-total">-</span></div>
+                                <div class="summary-row"><span>Uang Muka (DP):</span><span id="info-bayar-dp" style="color: #059669;">-</span></div>
+                                <div class="summary-row"><span>Sudah Dibayar:</span><span id="info-bayar-terbayar" style="color: #059669;">-</span></div>
+                                <div class="summary-row debt-row" style="border-top: 1px dashed #cbd5e1; margin-top: 0.5rem; padding-top: 0.5rem;">
+                                    <span>Sisa Utang Saat Ini:</span><span id="info-bayar-sisa">Rp 0</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bayar-tanggal">Tanggal Pembayaran</label>
+                                <input type="date" id="bayar-tanggal" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                                    <label for="bayar-jumlah" style="margin-bottom: 0;">Jumlah Bayar (Rp)</label>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="fillLunasAmount()" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">⚡ Bayar Lunas Sekaligus</button>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" id="bayar-jumlah" class="form-control" min="1" required placeholder="0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bayar-metode">Metode Pembayaran</label>
+                                <select id="bayar-metode" class="form-control">
+                                    <option value="Transfer Bank">Transfer Bank</option>
+                                    <option value="Tunai">Tunai (Cash)</option>
+                                    <option value="QRIS">QRIS</option>
+                                    <option value="Giro / Cek">Giro / Cek</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bayar-keterangan">Keterangan / Catatan</label>
+                                <input type="text" id="bayar-keterangan" class="form-control" placeholder="Contoh: Angsuran ke-1, Pelunasan via BCA, dll.">
+                            </div>
+
+                            <div style="margin-top: 1.25rem;">
+                                <button type="submit" id="btn-simpan-bayar" class="btn btn-success" style="width: 100%;">💰 Catat Pembayaran</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Riwayat Pembayaran Terbaru -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>📜 Riwayat Pembayaran Terakhir</span>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Nota</th>
+                                        <th>Pelanggan</th>
+                                        <th class="text-right">Jumlah</th>
+                                        <th>Metode</th>
+                                        <th>Ket</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="riwayat-bayar-tbody">
+                                    <!-- Diisi oleh JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 5: DATA PELANGGAN (DEBITUR)
+             ================================================================ -->
+        <section id="tab-pelanggan" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>👥 Master Data Pelanggan (Debitur)</span>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="openModal('modal-tambah-pelanggan')">+ Tambah Pelanggan</button>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama Pelanggan</th>
+                                    <th>No. Telp / HP</th>
+                                    <th>Alamat</th>
+                                    <th class="text-right">Total Utang Berjalan</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pelanggan-table-tbody">
+                                <!-- Diisi oleh JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             TAB 6: DATA PRODUK (MASTER BARANG)
+             ================================================================ -->
+        <section id="tab-produk" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>📦 Master Data Produk / Barang Dagang</span>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="openModal('modal-tambah-produk')">+ Tambah Produk</button>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Kode Produk</th>
+                                    <th>Nama Produk</th>
+                                    <th class="text-right">Harga Jual</th>
+                                    <th class="text-center">Sisa Stok</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="produk-table-tbody">
+                                <!-- Diisi oleh JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ====================================================================
+         MODAL: DETAIL NOTA & PRINT FAKTUR
+         ==================================================================== -->
+    <div id="modal-detail-nota" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header no-print">
+                <h3 class="modal-title">Rincian Faktur Penjualan & Pembayaran</h3>
+                <button class="modal-close" onclick="closeModal('modal-detail-nota')">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-detail-body">
+                <!-- Rincian Nota diisi oleh JS -->
+            </div>
+            <div class="modal-footer no-print">
+                <button type="button" class="btn btn-primary" onclick="printDocument()">🖨️ Cetak Faktur / Kuitansi</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-detail-nota')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: KARTU PIUTANG PELANGGAN
+         ==================================================================== -->
+    <div id="modal-kartu-piutang" class="modal-overlay">
+        <div class="modal-container" style="max-width: 840px;">
+            <div class="modal-header no-print">
+                <h3 class="modal-title">Buku Kartu Piutang Pelanggan</h3>
+                <button class="modal-close" onclick="closeModal('modal-kartu-piutang')">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-kartu-body">
+                <!-- Diisi oleh JS -->
+            </div>
+            <div class="modal-footer no-print">
+                <button type="button" class="btn btn-primary" onclick="printDocument()">🖨️ Cetak Kartu Piutang</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-kartu-piutang')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: TAMBAH PELANGGAN BARU
+         ==================================================================== -->
+    <div id="modal-tambah-pelanggan" class="modal-overlay">
+        <div class="modal-container" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Tambah Pelanggan Baru</h3>
+                <button class="modal-close" onclick="closeModal('modal-tambah-pelanggan')">&times;</button>
+            </div>
+            <form id="form-modal-pelanggan">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal-plg-kode">Kode Pelanggan</label>
+                        <input type="text" id="modal-plg-kode" class="form-control" placeholder="Contoh: PLG003" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-plg-nama">Nama Lengkap</label>
+                        <input type="text" id="modal-plg-nama" class="form-control" placeholder="Nama Pelanggan" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-plg-hp">Nomor HP / WhatsApp</label>
+                        <input type="text" id="modal-plg-hp" class="form-control" placeholder="08xxxxxxxxxx">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-plg-alamat">Alamat</label>
+                        <textarea id="modal-plg-alamat" class="form-control" rows="2" placeholder="Alamat pelanggan..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-tambah-pelanggan')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Pelanggan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: TAMBAH PRODUK BARU
+         ==================================================================== -->
+    <div id="modal-tambah-produk" class="modal-overlay">
+        <div class="modal-container" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Tambah Produk Baru</h3>
+                <button class="modal-close" onclick="closeModal('modal-tambah-produk')">&times;</button>
+            </div>
+            <form id="form-modal-produk">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="modal-prd-kode">Kode Produk</label>
+                        <input type="text" id="modal-prd-kode" class="form-control" placeholder="Contoh: PRD005" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-prd-nama">Nama Produk</label>
+                        <input type="text" id="modal-prd-nama" class="form-control" placeholder="Nama Produk / Barang" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-prd-harga">Harga Jual (Rp)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">Rp</span>
+                            <input type="number" id="modal-prd-harga" class="form-control" min="0" placeholder="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-prd-stok">Stok Awal</label>
+                        <input type="number" id="modal-prd-stok" class="form-control" value="0" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('modal-tambah-produk')">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Produk</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" class="no-print"></div>
+
+    <!-- Front End Controller Script -->
+    <script src="../JS/script.js"></script>
+</body>
+</html>
