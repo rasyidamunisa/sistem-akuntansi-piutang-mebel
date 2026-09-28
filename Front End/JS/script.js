@@ -1038,12 +1038,13 @@ function printDocument() {
 // 12. TAB NAVIGATION & MODAL CONTROLLERS
 // ----------------------------------------------------------------------------
 function switchTab(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-btn, .nav-link').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabId);
     });
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.toggle('active', content.id === `tab-${tabId}`);
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function openModal(modalId) {
@@ -1060,9 +1061,11 @@ function closeModal(modalId) {
 // 13. DOM READY & EVENT LISTENERS
 // ----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    // Tab switching (nav-link & tab-btn)
+    document.querySelectorAll('.tab-btn, .nav-link').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.tab) switchTab(btn.dataset.tab);
+        });
     });
 
     // Filter status buttons in Buku Utang
