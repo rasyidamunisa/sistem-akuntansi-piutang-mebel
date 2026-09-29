@@ -410,7 +410,10 @@
                             <div class="items-builder">
                                 <div class="items-builder-header">
                                     <strong style="font-size: 0.95rem; color: var(--purple-950);">Rincian Barang yang Dijual (detail_penjualan):</strong>
-                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow()">+ Tambah Barang</button>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="openModal('modal-tambah-produk')">+ Produk Baru</button>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow()">+ Tambah Barang</button>
+                                    </div>
                                 </div>
                                 
                                 <div style="display: grid; grid-template-columns: 3fr 1fr 2fr 2fr 40px; gap: 0.75rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 700; color: #7c6f93;">

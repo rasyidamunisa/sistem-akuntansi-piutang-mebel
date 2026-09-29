@@ -730,6 +730,17 @@ body {
     border-color: var(--primary);
 }
 
+.btn-outline-primary {
+    background: #ffffff;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+.btn-outline-primary:hover {
+    background: var(--purple-100);
+    color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
 .btn-sm {
     padding: 0.35rem 0.75rem;
     font-size: 0.8rem;

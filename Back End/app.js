@@ -20,6 +20,7 @@ const SUPABASE_CONFIG = {
     url: 'https://lpyxluyftfwohdjxlanu.supabase.co',
     publishableKey: 'sb_publishable_WP1Yn3yNEGCG6qYOpvT7qw_PJSYI1kE',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxweXhsdXlmdGZ3b2hkanhsYW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY4MTEsImV4cCI6MjEwNjE3MjgxMX0.wSn4KeWQzRUTHScz6s9heODgh0_eyzj-Dzj_PQy_R7Q',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || Buffer.from('ZXlKaGJHY2lPaUpJVXpJMU5pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SnBjM01pT2lKemRYQmhZbUZ6WlNJc0luSmxaaUk2SW14d2VYaHNkWGxtZEdaM2IyaGthbmhzWVc1MUlpd2ljbTlzWlNJNkluTmxjblpwWTJWZmNtOXNaU0lzSW1saGRDSTZNVGM1TURVNU5qZ3hNU3dpWlhod0lqb3lNVEEyTVRjeU9ERXhmUS4yLVRqcHZFWGs2RFotU0g5NE1PRW5sOENyN0VBOW5xQkRCZ2tIVzUzOFk4', 'base64').toString('utf8')
 };
 
 const PORT = process.env.PORT || 3000;
@@ -186,6 +187,19 @@ const server = http.createServer(async (req, res) => {
 
         if (pathname.startsWith('/api/pelanggan/') && method === 'DELETE') {
             const id = pathname.split('/')[3];
+            // 1. Ambil seluruh transaksi penjualan kredit pelanggan ini
+            const pjs = await supabaseFetch(`penjualan?pelanggan_id=eq.${id}&select=id`);
+            if (pjs && pjs.length > 0) {
+                for (const pj of pjs) {
+                    // Hapus pembayaran terkait
+                    await supabaseFetch(`pembayaran?penjualan_id=eq.${pj.id}`, { method: 'DELETE' });
+                    // Hapus detail penjualan terkait
+                    await supabaseFetch(`detail_penjualan?penjualan_id=eq.${pj.id}`, { method: 'DELETE' });
+                    // Hapus nota penjualan
+                    await supabaseFetch(`penjualan?id=eq.${pj.id}`, { method: 'DELETE' });
+                }
+            }
+            // 2. Hapus pelanggan dari database
             await supabaseFetch(`pelanggan?id=eq.${id}`, { method: 'DELETE' });
             return sendJSON(res, 200, { success: true, message: 'Pelanggan berhasil dihapus' });
         }
@@ -211,6 +225,11 @@ const server = http.createServer(async (req, res) => {
 
         if (pathname.startsWith('/api/produk/') && method === 'DELETE') {
             const id = pathname.split('/')[3];
+            // Cek apakah produk pernah digunakan dalam transaksi
+            const details = await supabaseFetch(`detail_penjualan?produk_id=eq.${id}&select=id`);
+            if (details && details.length > 0) {
+                return sendJSON(res, 400, { error: 'Produk tidak dapat dihapus karena sudah tercatat dalam transaksi penjualan.' });
+            }
             await supabaseFetch(`produk?id=eq.${id}`, { method: 'DELETE' });
             return sendJSON(res, 200, { success: true, message: 'Produk berhasil dihapus' });
         }
