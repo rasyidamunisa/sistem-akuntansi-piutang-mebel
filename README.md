@@ -1,4 +1,4 @@
-# Sistem Akuntansi Utang dan Pembayaran
+# Sistem Akuntansi Piutang dan Pelunasan
 
 Sistem informasi akuntansi berbasis web untuk pencatatan dan monitoring transaksi **penjualan kredit**, **piutang usaha**, serta **pembayaran angsuran dan pelunasan piutang pelanggan**.
 
@@ -9,7 +9,7 @@ Sistem ini terhubung langsung ke **Supabase PostgreSQL Cloud** dan mendukung pem
 ## 🏗️ Struktur Proyek
 
 ```text
-Sistem Akuntansi Utang dan Pembayaran/
+Sistem Akuntansi Piutang dan Pelunasan/
 ├── Back End/
 │   ├── app.js             # Server backend Node.js mandiri (zero external dependencies)
 │   └── SQL/
