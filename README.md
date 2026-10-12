@@ -3,7 +3,7 @@
 Sistem informasi akuntansi berbasis web untuk toko mebel yang berfungsi membantu proses pencatatan dan monitoring transaksi **penjualan kredit**, **piutang usaha**, serta **pembayaran angsuran dan pelunasan piutang pelanggan**.
 
 Sistem ini terhubung langsung ke **Supabase PostgreSQL Cloud** dan mendukung pemrosesan transaksi secara *real-time*.
-
+**Link Web:** https://rasyidamunisa.github.io/sistem-akuntansi-piutang-mebel/Front%20End/HTML/index.html 
 ---
 
 ## 🏗️ Struktur Proyek
