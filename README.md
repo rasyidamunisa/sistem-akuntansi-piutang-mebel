@@ -1,4 +1,4 @@
-# Sistem Akuntansi Piutang dan Pelunasan
+# Sistem Akuntansi Piutang dan Pembayaran
 
 Sistem informasi akuntansi berbasis web untuk toko mebel yang berfungsi membantu proses pencatatan dan monitoring transaksi **penjualan kredit**, **piutang usaha**, serta **pembayaran angsuran dan pelunasan piutang pelanggan**.
 
@@ -10,7 +10,7 @@ Sistem ini terhubung langsung ke **Supabase PostgreSQL Cloud** dan mendukung pem
 ## 🏗️ Struktur Proyek
 
 ```text
-Sistem Akuntansi Piutang dan Pelunasan/
+Sistem Akuntansi Piutang dan Pembayaran/
 ├── Back End/
 │   ├── app.js             # Server backend Node.js mandiri (zero external dependencies)
 │   └── SQL/
